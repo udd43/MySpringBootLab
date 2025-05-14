@@ -3,6 +3,7 @@ package com.rookies3.myspringbootlab.controller;
 import com.rookies3.myspringbootlab.entity.Book;
 import com.rookies3.myspringbootlab.exception.BusinessException;
 import com.rookies3.myspringbootlab.repository.BookRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,10 +14,9 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/books")
+@RequiredArgsConstructor
 public class BookController {
-    
-    @Autowired
-    private BookRepository bookRepository;
+    private final BookRepository bookRepository;
     
     // 모든 도서 조회
     @GetMapping
@@ -28,7 +28,9 @@ public class BookController {
     @GetMapping("/{id}")
     public ResponseEntity<Book> getBookById(@PathVariable Long id) {
         Optional<Book> optionalBook = bookRepository.findById(id);
-        return optionalBook.map(ResponseEntity::ok)
+
+        return optionalBook.map(book -> ResponseEntity.ok(book))
+                //.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
@@ -49,7 +51,7 @@ public class BookController {
     @PostMapping
     public ResponseEntity<Book> createBook(@RequestBody Book book) {
         Book savedBook = bookRepository.save(book);
-        return new ResponseEntity<>(savedBook, HttpStatus.CREATED);
+        return new ResponseEntity<>(savedBook, HttpStatus.CREATED); //CREATED 201
     }
     
     // 도서 정보 수정
@@ -66,10 +68,11 @@ public class BookController {
     // 도서 삭제
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
+        //매칭돠는 Book 이 없으면
         if (!bookRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.notFound().build(); //404
         }
         bookRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.noContent().build(); //204
     }
 }

@@ -103,9 +103,9 @@ public class BookRepositoryTest {
     public void testUpdateBook() {
         // Given
         Book book = new Book();
-        book.setTitle("스프링 부트 입문");
-        book.setAuthor("홍길동");
-        book.setIsbn("9788956746425");
+        book.setTitle("스프링 부트 입문1");
+        book.setAuthor("홍길동1");
+        book.setIsbn("9788956746426");
         book.setPrice(30000);
         Book savedBook = bookRepository.save(book);
         
@@ -121,6 +121,8 @@ public class BookRepositoryTest {
     @Test
     @Rollback(value = false)
     public void testDeleteBook() {
+//        bookRepository.deleteAll();
+
         // Given
         Book book = new Book();
         book.setTitle("스프링 부트 입문");
