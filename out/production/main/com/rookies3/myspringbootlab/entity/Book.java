@@ -2,17 +2,15 @@ package com.rookies3.myspringbootlab.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.DynamicUpdate;
-
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "books")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Getter
-@Setter
 public class Book {
 
     @Id
@@ -33,8 +31,20 @@ public class Book {
 
     private LocalDate publishDate;
 
-    @OneToOne(mappedBy = "book",
-            cascade = CascadeType.ALL,
-            fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "publisher_id")
+    private Publisher publisher;
+
+    @OneToOne(mappedBy = "book", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private BookDetail bookDetail;
+
+    /**
+     * BookDetail과 양방향 연관관계를 설정해주는 편의 메서드.
+     */
+    public void setBookDetail(BookDetail bookDetail) {
+        this.bookDetail = bookDetail;
+        if (bookDetail.getBook() != this) {
+            bookDetail.setBook(this);
+        }
+    }
 }

@@ -1,91 +1,111 @@
 package com.rookies3.myspringbootlab.controller;
 
 import com.rookies3.myspringbootlab.controller.dto.BookDTO;
+import com.rookies3.myspringbootlab.exception.BusinessException;
+import com.rookies3.myspringbootlab.exception.ErrorCode;
 import com.rookies3.myspringbootlab.service.BookService;
-
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
-import java.util.Optional;
 
+@RestController
 @RestController
 @RequestMapping("/api/books")
 @RequiredArgsConstructor
+@Validated
 public class BookController {
 
     private final BookService bookService;
 
     @GetMapping
     public ResponseEntity<List<BookDTO.Response>> getAllBooks() {
-        List<BookDTO.Response> books = bookService.getAllBooks();
-        return ResponseEntity.ok(books);
+        return ResponseEntity.ok(bookService.getAllBooks());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<BookDTO.Response> getBookById(@PathVariable Long id) {
-        BookDTO.Response book = bookService.getBookById(id);
-        return ResponseEntity.ok(book);
+        try {
+            return ResponseEntity.ok(bookService.getBookById(id));
+        } catch (BusinessException ex) {
+            if (ex.getErrorCode() == ErrorCode.RESOURCE_NOT_FOUND) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+            throw ex;
+        }
     }
 
     @GetMapping("/isbn/{isbn}")
     public ResponseEntity<BookDTO.Response> getBookByIsbn(@PathVariable String isbn) {
-        BookDTO.Response book = bookService.getBookByIsbn(isbn);
-        return ResponseEntity.ok(book);
+        try {
+            return ResponseEntity.ok(bookService.getBookByIsbn(isbn));
+        } catch (BusinessException ex) {
+            if (ex.getErrorCode() == ErrorCode.RESOURCE_NOT_FOUND) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+            throw ex;
+        }
     }
 
     @GetMapping("/search/author")
     public ResponseEntity<List<BookDTO.Response>> getBooksByAuthor(@RequestParam String author) {
-        List<BookDTO.Response> books = bookService.getBooksByAuthor(author);
-        return ResponseEntity.ok(books);
+        return ResponseEntity.ok(bookService.getBooksByAuthor(author));
     }
 
     @GetMapping("/search/title")
     public ResponseEntity<List<BookDTO.Response>> getBooksByTitle(@RequestParam String title) {
-        List<BookDTO.Response> books = bookService.getBooksByTitle(title);
-        return ResponseEntity.ok(books);
+        return ResponseEntity.ok(bookService.getBooksByTitle(title));
+    }
+
+    @GetMapping("/publisher/{publisherId}")
+    public ResponseEntity<List<BookDTO.Response>> getBooksByPublisher(@PathVariable Long publisherId) {
+        try {
+            return ResponseEntity.ok(bookService.getBooksByPublisherId(publisherId));
+        } catch (BusinessException ex) {
+            if (ex.getErrorCode() == ErrorCode.RESOURCE_NOT_FOUND) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+            throw ex;
+        }
     }
 
     @PostMapping
     public ResponseEntity<BookDTO.Response> createBook(@Valid @RequestBody BookDTO.Request request) {
-        BookDTO.Response createdBook = bookService.createBook(request);
-        return new ResponseEntity<>(createdBook, HttpStatus.CREATED);
+        BookDTO.Response created = bookService.createBook(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    // 전체 교체 (기존 방식 유지)
     @PutMapping("/{id}")
     public ResponseEntity<BookDTO.Response> updateBook(
             @PathVariable Long id,
             @Valid @RequestBody BookDTO.Request request) {
-        BookDTO.Response updatedBook = bookService.updateBook(id, request);
-        return ResponseEntity.ok(updatedBook);
-    }
-
-    // 부분 수정 (새로 추가)
-    @PatchMapping("/{id}")
-    public ResponseEntity<BookDTO.Response> partialUpdateBook(
-            @PathVariable Long id,
-            @RequestBody BookDTO.PatchRequest request) {
-        BookDTO.Response updatedBook = bookService.partialUpdateBook(id, request);
-        return ResponseEntity.ok(updatedBook);
-    }
-
-    // BookDetail만 수정
-    @PatchMapping("/{id}/detail")
-    public ResponseEntity<BookDTO.Response> updateBookDetail(
-            @PathVariable Long id,
-            @RequestBody BookDTO.BookDetailPatchRequest request) {
-        BookDTO.Response updatedBook = bookService.updateBookDetail(id, request);
-        return ResponseEntity.ok(updatedBook);
+        try {
+            return ResponseEntity.ok(bookService.updateBook(id, request));
+        } catch (BusinessException ex) {
+            if (ex.getErrorCode() == ErrorCode.RESOURCE_NOT_FOUND) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+            throw ex;
+        }
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
-        bookService.deleteBook(id);
-        return ResponseEntity.noContent().build();
+        try {
+            bookService.deleteBook(id);
+            return ResponseEntity.noContent().build();
+        } catch (BusinessException ex) {
+            if (ex.getErrorCode() == ErrorCode.RESOURCE_NOT_FOUND) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+            if (ex.getErrorCode() == ErrorCode.ILLEGAL_STATE) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            }
+            throw ex;
+        }
     }
 }
